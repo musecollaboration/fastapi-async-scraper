@@ -6,6 +6,7 @@
 
 Архитектура написана так, будто на целевом сайте есть антибот-защита: реализованы
 задержка между запросами, браузерные заголовки, ретраи с backoff и детектор капчи.
+Все модули покрыты тестами на pytest (см. раздел [Тесты](#тесты)).
 
 ## Стек
 
@@ -15,6 +16,7 @@
 * BeautifulSoup4 (парсинг HTML)
 * pandas (CSV-экспорт)
 * Pydantic v2
+* pytest + pytest-asyncio (тесты)
 
 ## Структура проекта
 
@@ -26,6 +28,9 @@
 ├── schemas.py        # Pydantic-модели: Product, ParseRequest, ParseResponse
 ├── exporter.py       # export_to_csv(): pandas → utf-8-sig, разделитель ";"
 ├── requirements.txt
+├── requirements-dev.txt  # зависимости для тестов (pytest, pytest-asyncio)
+├── pytest.ini        # конфигурация pytest (asyncio_mode=auto)
+├── tests/            # тесты: схемы, экспорт, парсер, API (101 тест)
 ├── exports/          # создаётся автоматически при первом экспорте
 └── README.md
 ```
@@ -44,6 +49,15 @@ uvicorn main:app --reload
 страниц, лоадер, блок результата и ссылка «Скачать CSV».
 
 Swagger UI: <http://127.0.0.1:8000/docs>
+
+## Тесты
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+101 тест покрывает: валидацию Pydantic-моделей, формат CSV (кодировка, разделитель, заголовки), чистые функции парсера, ретраи с backoff, детектор капчи, пагинацию, дедупликацию и все эндпоинты FastAPI через TestClient.
 
 ## Эндпоинты
 
