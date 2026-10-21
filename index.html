@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ru" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Парсер каталога Books</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="flex min-h-full items-center justify-center bg-slate-950 p-4 font-sans text-slate-100 antialiased"
+  >
+    <main class="w-full max-w-xl">
+      <section
+        class="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/50 backdrop-blur sm:p-8"
+      >
+        <header class="mb-6">
+          <h1 class="text-2xl font-semibold tracking-tight text-white">
+            Парсер каталога Books
+          </h1>
+          <p class="mt-1 text-sm text-slate-400">
+            Соберите карточки товаров с books.toscrape.com и скачайте CSV.
+          </p>
+        </header>
+
+        <form id="parse-form" class="space-y-5" novalidate>
+          <div>
+            <label for="category-url" class="mb-1.5 block text-sm font-medium text-slate-300">
+              URL категории
+            </label>
+            <input
+              id="category-url"
+              name="category_url"
+              type="url"
+              required
+              autocomplete="url"
+              spellcheck="false"
+              value="https://books.toscrape.com/catalogue/page-1.html"
+              placeholder="https://books.toscrape.com/catalogue/page-1.html"
+              class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+            />
+          </div>
+
+          <div>
+            <label for="max-pages" class="mb-1.5 block text-sm font-medium text-slate-300">
+              Количество страниц
+            </label>
+            <input
+              id="max-pages"
+              name="max_pages"
+              type="number"
+              min="1"
+              max="50"
+              step="1"
+              required
+              value="2"
+              class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-slate-100 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+            />
+            <p class="mt-1.5 text-xs text-slate-500">
+              На каждую страницу — пауза ~1 с, максимум 50.
+            </p>
+          </div>
+
+          <button
+            id="submit-button"
+            type="submit"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <svg
+              id="spinner"
+              class="hidden h-4 w-4 animate-spin"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path
+                class="opacity-90"
+                fill="currentColor"
+                d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
+              />
+            </svg>
+            <span id="submit-label">Запустить парсинг</span>
+          </button>
+        </form>
+
+        <div
+          id="result"
+          class="mt-6 hidden rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4"
+          role="status"
+          aria-live="polite"
+        >
+          <p id="result-text" class="text-sm font-medium text-emerald-300"></p>
+          <a
+            id="download-link"
+            href="#"
+            class="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0 4-4m-4 4-4-4M5 20h14" />
+            </svg>
+            Скачать CSV
+          </a>
+        </div>
+
+        <div
+          id="error"
+          class="mt-6 hidden rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300"
+          role="alert"
+        ></div>
+
+        <footer class="mt-8 border-t border-slate-800 pt-4 text-xs text-slate-500">
+          PoC: httpx + BeautifulSoup4 + pandas. Данные — песочница books.toscrape.com.
+        </footer>
+      </section>
+    </main>
+    <script>
+      const form = document.getElementById('parse-form');
+      const urlInput = document.getElementById('category-url');
+      const pagesInput = document.getElementById('max-pages');
+      const submitButton = document.getElementById('submit-button');
+      const submitLabel = document.getElementById('submit-label');
+      const spinner = document.getElementById('spinner');
+      const resultBox = document.getElementById('result');
+      const resultText = document.getElementById('result-text');
+      const downloadLink = document.getElementById('download-link');
+      const errorBox = document.getElementById('error');
+
+      function setLoading(isLoading) {
+        submitButton.disabled = isLoading;
+        spinner.classList.toggle('hidden', !isLoading);
+        submitLabel.textContent = isLoading ? 'Парсинг...' : 'Запустить парсинг';
+      }
+
+      function resetMessages() {
+        resultBox.classList.add('hidden');
+        errorBox.classList.add('hidden');
+        errorBox.textContent = '';
+      }
+
+      function showError(message) {
+        errorBox.textContent = message;
+        errorBox.classList.remove('hidden');
+      }
+
+      // FastAPI отдаёт detail строкой (502) или массивом ошибок (422).
+      function formatError(data, status) {
+        const detail = data && data.detail;
+        if (Array.isArray(detail)) {
+          return detail.map((item) => item.msg || 'Некорректное значение').join('; ');
+        }
+        if (typeof detail === 'string' && detail.trim()) {
+          return detail;
+        }
+        return `Не удалось выполнить парсинг (HTTP ${status}).`;
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const categoryUrl = urlInput.value.trim();
+        const maxPages = Number.parseInt(pagesInput.value, 10);
+
+        resetMessages();
+
+        if (!categoryUrl.startsWith('http://') && !categoryUrl.startsWith('https://')) {
+          showError('URL должен начинаться с http:// или https://');
+          urlInput.focus();
+          return;
+        }
+        if (!Number.isInteger(maxPages) || maxPages < 1 || maxPages > 50) {
+          showError('Количество страниц должно быть целым числом от 1 до 50');
+          pagesInput.focus();
+          return;
+        }
+
+        setLoading(true);
+        try {
+          const response = await fetch('/parse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category_url: categoryUrl, max_pages: maxPages }),
+          });
+
+          let data = null;
+          try {
+            data = await response.json();
+          } catch (_) {
+            // Тело ответа не JSON — обработаем по HTTP-статусу.
+          }
+
+          if (!response.ok) {
+            throw new Error(formatError(data, response.status));
+          }
+          if (!data || typeof data.csv_file !== 'string') {
+            throw new Error('Сервер вернул неожиданный ответ.');
+          }
+
+          resultText.textContent = `Успешно собрано: ${data.items_count} товаров`;
+          downloadLink.href = `/download/${encodeURIComponent(data.csv_file)}`;
+          downloadLink.setAttribute('download', data.csv_file);
+          resultBox.classList.remove('hidden');
+        } catch (error) {
+          const message =
+            error instanceof TypeError
+              ? 'Сеть недоступна: не удалось связаться с сервером.'
+              : error.message;
+          showError(message);
+        } finally {
+          setLoading(false);
+        }
+      });
+    </script>
+  </body>
+</html>
