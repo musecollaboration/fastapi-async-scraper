@@ -1,6 +1,7 @@
 # Books To Scrape Parser (PoC)
 
-Асинхронный PoC-парсер каталога [books.toscrape.com](https://books.toscrape.com/catalogue/page-1.html)
+Реализация [технического задания](TASK.md) для асинхронного парсера каталога
+[books.toscrape.com](https://books.toscrape.com/catalogue/page-1.html)
 с REST-обёрткой на FastAPI и выгрузкой в CSV.
 
 Архитектура написана так, будто на целевом сайте есть антибот-защита: реализованы
