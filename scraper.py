@@ -193,7 +193,9 @@ def _parse_card(card: Tag, page_url: str) -> Product | None:
         return None
 
     product_url = urljoin(page_url, str(link["href"]))
-    name = _clean_text(link.get("title") or link.get_text())
+    title_raw = link.get("title")
+    name = _clean_text(title_raw if isinstance(title_raw, str) else None)
+    name = name or _clean_text(link.get_text())
 
     image = card.select_one("img")
     image_src = str(image["src"]) if image is not None and image.get("src") else ""
