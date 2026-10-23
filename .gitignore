@@ -4,3 +4,5 @@ __pycache__/
 exports/*.csv
 .pytest_cache/
 .ruff_cache/
+*:Zone.Identifier
+*Zone.Identifier*
