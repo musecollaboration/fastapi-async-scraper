@@ -22,7 +22,7 @@
 
 ```
 .
-├── main.py           # FastAPI: GET / (UI), POST /parse, GET /download/{file}, GET /health
+├── main.py           # FastAPI: GET / (UI), POST /parse, GET /download/{filename}, GET /health
 ├── index.html        # минималистичный фронтенд: Tailwind CDN + vanilla JS
 ├── scraper.py        # fetch_category(): httpx + BeautifulSoup, ретраи, паузы, капча
 ├── schemas.py        # Pydantic-модели: Product, ParseRequest, ParseResponse
@@ -40,6 +40,7 @@
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
+# На Windows активация: .venv\Scripts\activate (вместо source .venv/bin/activate)
 pip install -r requirements.txt
 
 uvicorn main:app --reload
@@ -99,7 +100,7 @@ curl -X POST http://127.0.0.1:8000/parse \
 | 422 | невалидное тело запроса (URL/диапазон `max_pages`) |
 | 502 | сеть, HTTP-ошибка источника или антибот-заглушка |
 
-### `GET /download/{csv_file}`
+### `GET /download/{filename}`
 
 Отдаёт сохранённый CSV:
 
