@@ -142,7 +142,7 @@ curl -OJ http://127.0.0.1:8000/download/products_20261021_214500_123456.csv
 
 ```
 Категория;Подкатегория;Наименование;Ссылка на фото;Ссылка на товар;Артикул
-Books;Books;A Light in the Attic;https://books.toscrape.com/media/cache/fe/72/fe72f0532301ec28892ae79a629a293c.jpg;https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html;SKU-8B1F0A2C9D3E
+Books;Books;A Light in the Attic;https://books.toscrape.com/media/cache/fe/72/fe72f0532301ec28892ae79a629a293c.jpg;https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html;SKU-SKU-C752FCF23AFC
 ```
 
 ## Использование как библиотеки
